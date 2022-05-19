@@ -3,24 +3,32 @@ name: Reusable workflow
 on:
   workflow_call:
     # Map the workflow outputs to job outputs
-    outputs:
-      firstword:
-        description: "The first output string"
-        value: ${{ jobs.example_job.outputs.output1 }}
-      secondword:
-        description: "The second output string"
-        value: ${{ jobs.example_job.outputs.output2 }}
-
 jobs:
   example_job:
     name: Generate output
-    runs-on: ubuntu-latest
-    # Map the job outputs to step outputs
-    outputs:
-      output1: ${{ steps.step1.outputs.firstword }}
-      output2: ${{ steps.step2.outputs.secondword }}
+    runs-on: self-hosted
     steps:
-      - id: step1
-        run: echo "::set-output name=firstword::hello"
-      - id: step2
-        run: echo "::set-output name=secondword::world"
+      - uses: actions/checkout@v2
+
+      - id: files
+        name: Get changed files
+        uses: jitterbit/get-changed-files@v1
+      - run: echo ${{ steps.files.outputs.all }}
+
+      - id: integration_tests
+        name: Integration tests
+        run: |
+         sudo docker run \
+         -e HOP_LOG_LEVEL=Basic \
+         -e HOP_FILE_PATH=/files/execute_unit_tests.hwf \
+         -e HOP_PROJECT_FOLDER=/files \
+         -e HOP_PROJECT_NAME=test_unit_actions \
+         -e HOP_ENVIRONMENT_NAME=test_unit_actions \
+         -e  HOP_RUN_CONFIG=local \
+         -e HOP_RUN_PARAMETERS='files=${{ steps.files.outputs.all }}' \
+         -v ${{ github.workspace }}/test_unit_actions:/files \
+         apache/hop:Development
+      - id: check
+        name: another check
+        if: always()
+        run: exit 0  
