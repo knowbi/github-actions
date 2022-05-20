@@ -1,0 +1,15 @@
+name: Apache Hop test
+
+on:
+  workflow_call:
+    # Map the workflow outputs to job outputs
+jobs:
+  test:
+    name: test
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+
+      - id: check
+        name: another check
+        run: exit 0
